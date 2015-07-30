@@ -1,1 +1,4 @@
 .modman
+node_modules/
+github-credentials.json
+*.zip
