@@ -1,20 +1,48 @@
 {
   "name": "checkout-woocommerce-plugin",
   "version": "1.0.0",
-  "description": "",
+  "description": "Checkout.com plugin for WooCommerce on WordPress",
+  "homepage": "https://www.checkout.com",
+  "demoURL": "",
   "main": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/CKOTech/checkout-woocommerce-plugin.git"
   },
-  "author": "CKOTech",
+  "author": {
+    "name": "CKOTech",
+    "email": "integration@checkout.com",
+    "url": "https://www.checkout.com"
+  },
+  "contributors": [
+    {
+      "name": "clement-paris-cko",
+      "url": "https://github.com/clement-paris-cko"
+    },
+    {
+      "name": "dhiraj-gangoosirdar-cko",
+      "url": "https://github.com/dhiraj-gangoosirdar-cko"
+    },
+    {
+      "name": "jason-footing-cko",
+      "url": "https://github.com/jason-footing-cko"
+    },
+    {
+      "name": "avish-bisbeehurry-cko",
+      "url": "https://github.com/avish-bisbeehurry-cko"
+    }
+  ],
+  "lastContributor": {
+    "name": "clement-paris-cko",
+    "url": "https://github.com/clement-paris-cko"
+  },
   "license": "MIT",
   "devDependencies": {
     "github": "^0.2.4",
     "grunt": "^0.4.5",
-    "grunt-contrib-compress": "^0.13.0"
-  }
+    "grunt-contrib-compress": "^0.13.0",
+    "grunt-shell": "^1.1.2"
+  },
+  "dependencies": {}
 }

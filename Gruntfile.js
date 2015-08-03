@@ -2,8 +2,11 @@ module.exports = function(grunt) {
     var pkg = grunt.file.readJSON('package.json');
     var credentials = grunt.file.readJSON('github-credentials.json');
     var GithubAPI = require('github');
+    var zipBasePath = './wp-content/plugins/checkoutapipayment/';
+    var util = require('util');
 
     grunt.loadNpmTasks('grunt-contrib-compress');
+    grunt.loadNpmTasks('grunt-shell');
 
     grunt.initConfig({
         compress: {
@@ -13,10 +16,29 @@ module.exports = function(grunt) {
                 },
                 files: [{
                     expand: true,
-                    cwd: './wp-content/plugins/checkoutapipayment',
+                    cwd: zipBasePath,
                     src: ['**/*'],
                     dest: './'
                 }]
+            }
+        },
+        shell: {
+            gitPull: {
+                command: [
+                    'git checkout <%= branchName %>',
+                    'git pull origin <%= branchName %>',
+                    'git submodule update --init --recursive'
+                ].join(' && '),
+                options: {
+                    callback: function(err, stdout, stderr, cb) {
+                        if (!err) {
+                            var msg = 'Warning: your active Git branch has been checked out, you are now on ' + grunt.config('branchName');
+                            grunt.log.writeln(msg['magenta'].bold);
+                        }
+
+                        cb();
+                    }
+                }
             }
         }
     });
@@ -38,44 +60,99 @@ module.exports = function(grunt) {
         password: credentials.password
     });
 
-    grunt.registerTask('get-pr', 'Get opened Pull Request created by author', function() {
-        var done = this.async();
-        var author = grunt.option('author');
-        var headBranch = 'grunt';
-        var baseBranch = 'grunt';
+    function updatePackage(field, value) {
+        pkg[field] = value;
+        grunt.file.write('package.json', JSON.stringify(pkg, null, 2));
+    }
 
-        github.pullRequests.getAll({
-            user: 'CKOTech',
-            repo: pkg.name,
-            state: 'open',
-            head: author ? author + headBranch : credentials.username + headBranch,
-            base: baseBranch
-        }, function(err, res) {
-            if (err) {
-                grunt.fail.fatal(err);
-            } else {
-                grunt.config.set('pr-id', res[0].number);
-                done();
-            }
-        });
-    });
-
-    grunt.registerTask('merge-pr', 'Merge a Pull Request', function() {
+    grunt.registerTask('merge-pr', 'Merge a specified Pull Request', function() {
         var done = this.async();
+
+        grunt.config('branchName', grunt.option('branch'));
 
         github.pullRequests.merge({
-            user: 'CKOTech',
+            user: pkg.author.name,
             repo: pkg.name,
-            number: grunt.config.get('pr-id'),
+            number: grunt.option('pr'),
             commit_message: 'Pull request merged by Grunt'
         }, function(err, res) {
             if (err) {
                 grunt.fail.fatal(err);
             } else {
+                grunt.log.ok('Sucessfully merged PR#' + grunt.option('pr') + ' on ' + grunt.config('branchName'));
                 done();
             }
         });
     });
 
-    grunt.registerTask('default', ['get-pr', 'merge-pr', 'compress:zip_plugin']);
+    grunt.registerTask('pkg-update-contributors', 'Updates contributors in package.json', function() {
+        var done = this.async();
+
+        github.repos.getCommits({
+            user: pkg.author.name,
+            repo: pkg.name,
+            sha: grunt.option('branch') || grunt.config('branchName')
+        }, function(err, res) {
+            if (err) {
+                grunt.fail.warn(err);
+            } else {
+                var includedNames = [];
+                var contributors = res.reduce(function(list, commit) {
+                    var contributor = {
+                        name: commit.author.login,
+                        url: commit.author.html_url
+                    };
+
+                    if (includedNames.indexOf(commit.author.login) === -1) {
+                        list.push(contributor);
+                        includedNames.push(commit.author.login);
+                    }
+
+                    return list;
+                }, []);
+
+                includedNames = null;
+
+                updatePackage('contributors', contributors);
+
+                done();
+            }
+        });
+    });
+
+    grunt.registerTask('pkg-update-lastContributor', 'Update lastContributor in package.json', function() {
+        var done = this.async();
+
+        github.repos.getCommit({
+            user: pkg.author.name,
+            repo: pkg.name,
+            sha: grunt.option('branch') || grunt.config('branchName')
+        }, function(err, res) {
+            if (err) {
+                grunt.fail.warn(err);
+            } else {
+                var lastContributor = {
+                    name: res.author.login,
+                    url: res.author.html_url
+                };
+
+                updatePackage('lastContributor', lastContributor);
+
+                done();
+            }
+        });
+    });
+
+    /**
+     * Merge the pull request corresponding to the specified ID and branch, checkout and pull the merged branch,
+     * update package.json, then create a zip of the plugin
+     * USAGE: `grunt merge --pr=PR_ID --branch=BRANCH_NAME`
+     */
+    grunt.registerTask('merge', ['merge-pr', 'shell:gitPull', 'pkg-update-contributors', 'pkg-update-lastContributor', 'compress:zip_plugin']);
+
+    /* USAGE: `grunt zip`, as an alias for compress:zip_plugin */
+    grunt.registerTask('zip', ['compress:zip_plugin']);
+
+    /* USAGE: `grunt pkg-update --branch=BRANCH_NAME */
+    grunt.registerTask('pkg-update', ['pkg-update-contributors', 'pkg-update-lastContributor']);
 };
