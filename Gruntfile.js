@@ -3,7 +3,7 @@ module.exports = function(grunt) {
     var credentials = grunt.file.readJSON('github-credentials.json');
     var GithubAPI = require('github');
     var zipBasePath = './wp-content/plugins/checkoutapipayment/';
-    var util = require('util');
+    var zipName = 'checkoutapipayment';
 
     grunt.loadNpmTasks('grunt-contrib-compress');
     grunt.loadNpmTasks('grunt-shell');
@@ -12,7 +12,7 @@ module.exports = function(grunt) {
         compress: {
             zip_plugin: {
                 options: {
-                    archive: 'checkoutapipayment.zip'
+                    archive: zipName + '.zip'
                 },
                 files: [{
                     expand: true,
@@ -137,22 +137,23 @@ module.exports = function(grunt) {
                 };
 
                 updatePackage('lastContributor', lastContributor);
+                updatePackage('lastModified', res.commit.author.date);
 
                 done();
             }
         });
     });
 
-    /**
-     * Merge the pull request corresponding to the specified ID and branch, checkout and pull the merged branch,
-     * update package.json, then create a zip of the plugin
-     * USAGE: `grunt merge --pr=PR_ID --branch=BRANCH_NAME`
-     */
-    grunt.registerTask('merge', ['merge-pr', 'shell:gitPull', 'pkg-update-contributors', 'pkg-update-lastContributor', 'compress:zip_plugin']);
-
     /* USAGE: `grunt zip`, as an alias for compress:zip_plugin */
     grunt.registerTask('zip', ['compress:zip_plugin']);
 
     /* USAGE: `grunt pkg-update --branch=BRANCH_NAME */
     grunt.registerTask('pkg-update', ['pkg-update-contributors', 'pkg-update-lastContributor']);
+
+    /**
+     * Merge the pull request corresponding to the specified ID and branch, checkout and pull the merged branch,
+     * update package.json, then create a zip of the plugin
+     * USAGE: `grunt merge --pr=PR_ID --branch=BRANCH_NAME`
+     */
+    grunt.registerTask('merge', ['merge-pr', 'shell:gitPull', 'pkg-update', 'zip']);
 };

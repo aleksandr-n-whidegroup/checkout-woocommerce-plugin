@@ -27,16 +27,13 @@
     {
       "name": "jason-footing-cko",
       "url": "https://github.com/jason-footing-cko"
-    },
-    {
-      "name": "avish-bisbeehurry-cko",
-      "url": "https://github.com/avish-bisbeehurry-cko"
     }
   ],
   "lastContributor": {
     "name": "clement-paris-cko",
     "url": "https://github.com/clement-paris-cko"
   },
+  "lastModified": "2015-08-03T09:52:57Z",
   "license": "MIT",
   "devDependencies": {
     "github": "^0.2.4",
